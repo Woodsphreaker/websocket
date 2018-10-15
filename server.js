@@ -17,8 +17,8 @@ const privateMessage = (id, name, message) => {
     .send(`${name} diz: ${message}`)
 }
 
-const onMessage = (server, req) => data => {
-  const [ name, id ] = req.url.split('/').slice(1)
+const onMessage = (server, ws) => data => {
+  const { name } = clients[ws.id]
   const { message } = JSON.parse(data)
 
   broadcastMessages(server, `${name} diz: ${message}`)
@@ -38,6 +38,6 @@ server.on('connection', (ws, req) => {
 
   broadcastMessages(server, `${name} Conectou`)
 
-  ws.on('message', onMessage(server, req))
-  ws.on('close', onClose(server, ws))
+  ws.on('message', onMessage(server, ws)) // data is implicity
+  ws.on('close', onClose(server, ws)) // data is implicity
 })
