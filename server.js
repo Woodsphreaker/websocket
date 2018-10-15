@@ -29,6 +29,7 @@ const onMessage = (server, ws) => data => {
 const onClose = (server, ws) => data => {
   const { name } = clients[ws.id]
   broadcastMessages(server, `${name} desconectou`)
+  delete clients[ws.id]
 }
 
 server.on('connection', (ws, req) => {
