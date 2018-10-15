@@ -3,12 +3,14 @@ const Websocket = require('ws')
 const server = new Websocket.Server({ port: 4040 })
 const clients = {}
 
-const broadcastMessages = (server, name, message) => {
-  server.clients.forEach(client => {
-    client.send(`${name} diz: ${message}`)
-  })
+// Broadcast Messages
+const broadcastMessages = (server, message) => {
+  for (const client of server.clients) {
+    client.send(message)
+  }
 }
 
+// Private messages
 const privateMessage = (id, name, message) => {
   clients[id]
     .ws
@@ -19,11 +21,14 @@ const onMessage = (server, req) => data => {
   const [ name, id ] = req.url.split('/').slice(1)
   const { message } = JSON.parse(data)
 
-  // Broadcast
-  broadcastMessages(server, name, message)
+  broadcastMessages(server, `${name} diz: ${message}`)
 
-  // Private messages
   // privateMessage('456', name, message)
+}
+
+const onClose = (server, ws) => data => {
+  const { name } = clients[ws.id]
+  broadcastMessages(server, `${name} desconectou`)
 }
 
 server.on('connection', (ws, req) => {
@@ -31,17 +36,8 @@ server.on('connection', (ws, req) => {
   clients[id] = { name, ws }
   ws.id = id
 
-  for (const client of server.clients) {
-    client.send(`${name} Conectou`)
-  }
+  broadcastMessages(server, `${name} Conectou`)
 
   ws.on('message', onMessage(server, req))
-
-  ws.on('close', data => {
-    const { name } = clients[ws.id]
-
-    server.clients.forEach(client => {
-      client.send(`${name} desconectou`)
-    })
-  })
+  ws.on('close', onClose(server, ws))
 })
